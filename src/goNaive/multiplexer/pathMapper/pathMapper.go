@@ -6,27 +6,45 @@ import (
 
 // -----------------------------------------------------------
 // Note: this will be substituted with controller.Runnable
-type simpleRunnable interface {
+type SimpleRunnable interface {
 	Run() bool
 }
 
 // -----------------------------------------------------------
 
-type pathMapper struct {
+type pathMapperTree struct {
 	part     string
-	children map[string]*pathMapper
-	function simpleRunnable
+	children map[string]*pathMapperTree
+	function SimpleRunnable
 }
 
-func New(part string) *pathMapper {
-	var pm pathMapper
+var ALLOWED_METHODS = map[string]bool{
+	"POST":   true,
+	"GET":    true,
+	"DELETE": true,
+	"PUT":    true,
+}
+
+func New(part string) *pathMapperTree {
+	var pm pathMapperTree
 	pm.part = part
-	pm.children = make(map[string]*pathMapper)
+	pm.children = make(map[string]*pathMapperTree)
 	return &pm
 }
 
-func (pm *pathMapper) Add(path string, f simpleRunnable) {
+func (pm *pathMapperTree) Register(method string, path string, f SimpleRunnable) bool {
 	data := pm
+
+	// Check if method is enabled
+	if enabled, ok := ALLOWED_METHODS[method]; !ok || !enabled {
+		return false
+	}
+
+	// add method (eg: GET, POST, ..., ALL) in front of path
+	// so we will have something like
+	// 	GET/admin/user/list
+	// and we will map GET as first part of pathMapperTree tree
+	path = method + path
 
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
@@ -35,8 +53,8 @@ func (pm *pathMapper) Add(path string, f simpleRunnable) {
 			continue
 		}
 		if _, ok := data.children[part]; !ok {
-			var newPathMapper = New(part)
-			data.children[part] = newPathMapper
+			var newpathMapperTree = New(part)
+			data.children[part] = newpathMapperTree
 		}
 		if i == len(parts)-1 {
 			data.children[part].function = f
@@ -44,11 +62,36 @@ func (pm *pathMapper) Add(path string, f simpleRunnable) {
 
 		data = data.children[part]
 	}
+	return true
 }
 
-func (pm *pathMapper) GetControllers(path string) []simpleRunnable {
+func (pm *pathMapperTree) RegisterGet(path string, f SimpleRunnable) {
+	pm.Register("GET", path, f)
+}
+
+func (pm *pathMapperTree) RegisterPost(path string, f SimpleRunnable) {
+	pm.Register("POST", path, f)
+}
+
+func (pm *pathMapperTree) RegisterPut(path string, f SimpleRunnable) {
+	pm.Register("PUT", path, f)
+}
+
+func (pm *pathMapperTree) RegisterDelete(path string, f SimpleRunnable) {
+	pm.Register("DELETE", path, f)
+}
+
+func (pm *pathMapperTree) RegisterAll(path string, f SimpleRunnable) {
+	for method, enabled := range ALLOWED_METHODS {
+		if enabled {
+			pm.Register(method, path, f)
+		}
+	}
+}
+
+func (pm *pathMapperTree) GetControllers(path string) []SimpleRunnable {
 	data := pm
-	var functions []simpleRunnable
+	var functions []SimpleRunnable
 
 	parts := strings.Split(path, "/")
 	for _, part := range parts {

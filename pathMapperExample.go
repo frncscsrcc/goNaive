@@ -33,18 +33,46 @@ func (ec exampleController) Run() bool {
 
 func main() {
 
-	pathMapper := pathMapper.New("/")
+	pm := pathMapper.New("/")
 
 	// Register some controllers
-	pathMapper.Add("/admin/user/add", NewExampleController("I am the controller for /admin/user/add"))
-	pathMapper.Add("/admin/user/delete", NewExampleController("I am the controller for /admin/user/delete"))
-	pathMapper.Add("/admin/role/list", NewExampleController("I am the controller for /admin/role/list"))
-	pathMapper.Add("/admin", NewExampleController("I am the controller for /admin"))
-	pathMapper.Add("/powerUser/user/list", NewExampleController("I am the controller for /powerUser/user/list"))
+	pm.RegisterGet("/admin/user/add", NewExampleController("I am the controller for /admin/user/add (GET method)"))
+	pm.RegisterDelete("/admin/user/delete", NewExampleController("I am the controller for /admin/user/delete  (DELETE method)"))
+	pm.RegisterGet("/admin/role/list", NewExampleController("I am the controller for /admin/role/list (GET method)"))
+	pm.RegisterAll("/admin", NewExampleController("I am the controller for /admin (ALL methods)"))
+	pm.RegisterPost("/powerUser/user/list", NewExampleController("I am the controller for /powerUser/user/list (POST method)"))
 
-	// Example of http request
-	fmt.Printf("Requesting /admin/user/delete\n")
-	fa := pathMapper.GetControllers("/admin/user/delete")
+	var fa []pathMapper.SimpleRunnable
+
+	// Simulate an http request
+	fmt.Printf("Requesting /admin/user/delete [GET]\n")
+	fa = pm.GetControllers("GET/admin/role/list")
+	for _, f := range fa {
+		ok := f.Run()
+		// If controller does not retur true, stop the execution and handle the error
+		// message
+		if !ok {
+			// ...
+			break
+		}
+	}
+
+	// Simulate an http request
+	fmt.Printf("Requesting /admin/user/delete [DELETE]\n")
+	fa = pm.GetControllers("DELETE/admin/user/delete")
+	for _, f := range fa {
+		ok := f.Run()
+		// If controller does not retur true, stop the execution and handle the error
+		// message
+		if !ok {
+			// ...
+			break
+		}
+	}
+
+	// Simulate an http request
+	fmt.Printf("Requesting /powerUser/user/list [POST]\n")
+	fa = pm.GetControllers("POST/powerUser/user/list")
 	for _, f := range fa {
 		ok := f.Run()
 		// If controller does not retur true, stop the execution and handle the error
@@ -56,8 +84,8 @@ func main() {
 	}
 
 	// Example of http request
-	fmt.Printf("Requesting /powerUser/user/list\n")
-	fa = pathMapper.GetControllers("/powerUser/user/list")
+	fmt.Printf("Requesting /admin/not/exists\n")
+	fa = pm.GetControllers("POST/admin/not/exists")
 	for _, f := range fa {
 		ok := f.Run()
 		// If controller does not retur true, stop the execution and handle the error
