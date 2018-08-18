@@ -25,7 +25,7 @@ func NewExampleController(message string) exampleController {
 // the next controller in the chain. In this case we will return always
 // true.
 func (ec exampleController) Run() bool {
-	fmt.Printf("%v\n", ec)
+	fmt.Printf("\t%v\n", ec.message)
 	return true
 }
 
@@ -33,7 +33,7 @@ func (ec exampleController) Run() bool {
 
 func main() {
 
-	pm := pathMapper.New("/")
+	pm := pathMapper.New()
 
 	// Register some controllers
 	pm.RegisterGet("/admin/user/add", NewExampleController("I am the controller for /admin/user/add (GET method)"))

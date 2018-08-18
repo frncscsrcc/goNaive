@@ -12,9 +12,8 @@ type SimpleRunnable interface {
 
 // -----------------------------------------------------------
 
-type pathMapperTree struct {
-	part     string
-	children map[string]*pathMapperTree
+type pathMapperNode struct {
+	children map[string]*pathMapperNode
 	function SimpleRunnable
 }
 
@@ -25,36 +24,31 @@ var ALLOWED_METHODS = map[string]bool{
 	"PUT":    true,
 }
 
-func New(part string) *pathMapperTree {
-	var pm pathMapperTree
-	pm.part = part
-	pm.children = make(map[string]*pathMapperTree)
+func New() *pathMapperNode {
+	var pm pathMapperNode
+	pm.children = make(map[string]*pathMapperNode)
 	return &pm
 }
 
-func (pm *pathMapperTree) Register(method string, path string, f SimpleRunnable) bool {
+func (pm *pathMapperNode) Register(method string, path string, f SimpleRunnable) {
 	data := pm
 
 	// Check if method is enabled
 	if enabled, ok := ALLOWED_METHODS[method]; !ok || !enabled {
-		return false
+		return
 	}
 
 	// add method (eg: GET, POST, ..., ALL) in front of path
 	// so we will have something like
 	// 	GET/admin/user/list
-	// and we will map GET as first part of pathMapperTree tree
+	// and we will map GET as first part of pathMapperNode tree
 	path = method + path
 
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
-		// Skip first empty element of slice
-		if len(part) == 0 {
-			continue
-		}
 		if _, ok := data.children[part]; !ok {
-			var newpathMapperTree = New(part)
-			data.children[part] = newpathMapperTree
+			var newpathMapperNode = New()
+			data.children[part] = newpathMapperNode
 		}
 		if i == len(parts)-1 {
 			data.children[part].function = f
@@ -62,26 +56,25 @@ func (pm *pathMapperTree) Register(method string, path string, f SimpleRunnable)
 
 		data = data.children[part]
 	}
-	return true
 }
 
-func (pm *pathMapperTree) RegisterGet(path string, f SimpleRunnable) {
+func (pm *pathMapperNode) RegisterGet(path string, f SimpleRunnable) {
 	pm.Register("GET", path, f)
 }
 
-func (pm *pathMapperTree) RegisterPost(path string, f SimpleRunnable) {
+func (pm *pathMapperNode) RegisterPost(path string, f SimpleRunnable) {
 	pm.Register("POST", path, f)
 }
 
-func (pm *pathMapperTree) RegisterPut(path string, f SimpleRunnable) {
+func (pm *pathMapperNode) RegisterPut(path string, f SimpleRunnable) {
 	pm.Register("PUT", path, f)
 }
 
-func (pm *pathMapperTree) RegisterDelete(path string, f SimpleRunnable) {
+func (pm *pathMapperNode) RegisterDelete(path string, f SimpleRunnable) {
 	pm.Register("DELETE", path, f)
 }
 
-func (pm *pathMapperTree) RegisterAll(path string, f SimpleRunnable) {
+func (pm *pathMapperNode) RegisterAll(path string, f SimpleRunnable) {
 	for method, enabled := range ALLOWED_METHODS {
 		if enabled {
 			pm.Register(method, path, f)
@@ -89,16 +82,12 @@ func (pm *pathMapperTree) RegisterAll(path string, f SimpleRunnable) {
 	}
 }
 
-func (pm *pathMapperTree) GetControllers(path string) []SimpleRunnable {
+func (pm *pathMapperNode) GetControllers(path string) []SimpleRunnable {
 	data := pm
 	var functions []SimpleRunnable
 
 	parts := strings.Split(path, "/")
 	for _, part := range parts {
-		// Skip first empty element of slice
-		if len(part) == 0 {
-			continue
-		}
 		if _, ok := data.children[part]; !ok {
 			return nil
 		}
