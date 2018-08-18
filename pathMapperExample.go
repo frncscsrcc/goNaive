@@ -49,7 +49,7 @@ func main() {
 	fa = pm.GetControllers("GET/admin/role/list")
 	for _, f := range fa {
 		ok := f.Run()
-		// If controller does not retur true, stop the execution and handle the error
+		// If controller does not return true, stop the execution and handle the error
 		// message
 		if !ok {
 			// ...
@@ -62,7 +62,7 @@ func main() {
 	fa = pm.GetControllers("DELETE/admin/user/delete")
 	for _, f := range fa {
 		ok := f.Run()
-		// If controller does not retur true, stop the execution and handle the error
+		// If controller does not return true, stop the execution and handle the error
 		// message
 		if !ok {
 			// ...
@@ -75,7 +75,7 @@ func main() {
 	fa = pm.GetControllers("POST/powerUser/user/list")
 	for _, f := range fa {
 		ok := f.Run()
-		// If controller does not retur true, stop the execution and handle the error
+		// If controller does not return true, stop the execution and handle the error
 		// message
 		if !ok {
 			// ...
@@ -88,7 +88,7 @@ func main() {
 	fa = pm.GetControllers("POST/admin/not/exists")
 	for _, f := range fa {
 		ok := f.Run()
-		// If controller does not retur true, stop the execution and handle the error
+		// If controller does not return true, stop the execution and handle the error
 		// message
 		if !ok {
 			// ...
