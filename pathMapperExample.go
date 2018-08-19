@@ -37,6 +37,8 @@ func main() {
 
 	// Register some controllers
 	pm.RegisterGet("/admin/user/add", NewExampleController("I am the controller for /admin/user/add (GET method)"))
+	pm.RegisterGet("/admin/user/get/:userID/all", NewExampleController("I am the controller for/admin/user/get/:userID/all (GET method)"))
+	pm.RegisterGet("/admin/role/list", NewExampleController("I am the controller for /admin/role/list (GET method)"))
 	pm.RegisterDelete("/admin/user/delete", NewExampleController("I am the controller for /admin/user/delete  (DELETE method)"))
 	pm.RegisterGet("/admin/role/list", NewExampleController("I am the controller for /admin/role/list (GET method)"))
 	pm.RegisterAll("/admin", NewExampleController("I am the controller for /admin (ALL methods)"))
@@ -45,8 +47,8 @@ func main() {
 	var fa []pathMapper.SimpleRunnable
 
 	// Simulate an http request
-	fmt.Printf("Requesting /admin/user/delete [GET]\n")
-	fa = pm.GetControllers("GET/admin/role/list")
+	fmt.Printf("Requesting GET/admin/user/get/test/all\n")
+	fa = pm.GetControllers("GET/admin/user/get/test/all")
 	for _, f := range fa {
 		ok := f.Run()
 		// If controller does not return true, stop the execution and handle the error
@@ -57,43 +59,6 @@ func main() {
 		}
 	}
 
-	// Simulate an http request
-	fmt.Printf("Requesting /admin/user/delete [DELETE]\n")
-	fa = pm.GetControllers("DELETE/admin/user/delete")
-	for _, f := range fa {
-		ok := f.Run()
-		// If controller does not return true, stop the execution and handle the error
-		// message
-		if !ok {
-			// ...
-			break
-		}
-	}
-
-	// Simulate an http request
-	fmt.Printf("Requesting /powerUser/user/list [POST]\n")
-	fa = pm.GetControllers("POST/powerUser/user/list")
-	for _, f := range fa {
-		ok := f.Run()
-		// If controller does not return true, stop the execution and handle the error
-		// message
-		if !ok {
-			// ...
-			break
-		}
-	}
-
-	// Example of http request
-	fmt.Printf("Requesting /admin/not/exists\n")
-	fa = pm.GetControllers("POST/admin/not/exists")
-	for _, f := range fa {
-		ok := f.Run()
-		// If controller does not return true, stop the execution and handle the error
-		// message
-		if !ok {
-			// ...
-			break
-		}
-	}
+	fmt.Printf("%v", pm)
 
 }

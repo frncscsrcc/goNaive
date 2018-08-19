@@ -1,7 +1,9 @@
 package pathMapper
 
 import (
+	"regexp"
 	"strings"
+	"fmt"
 )
 
 // -----------------------------------------------------------
@@ -12,8 +14,14 @@ type SimpleRunnable interface {
 
 // -----------------------------------------------------------
 
+type pathVariablePart struct {
+	name  string
+	child *pathMapperNode
+}
+
 type pathMapperNode struct {
 	children map[string]*pathMapperNode
+	variable pathVariablePart
 	function SimpleRunnable
 }
 
@@ -30,6 +38,16 @@ func New() *pathMapperNode {
 	return &pm
 }
 
+func isVariablePart(part string) (variable string, ok bool) {
+	re := regexp.MustCompile("^:(.+)$")
+	match := re.FindStringSubmatch(part)
+	if len(match) != 2 {
+		return "", false
+	} else {
+		return match[1], true
+	}
+}
+
 func (pm *pathMapperNode) Register(method string, path string, f SimpleRunnable) {
 	data := pm
 
@@ -43,18 +61,28 @@ func (pm *pathMapperNode) Register(method string, path string, f SimpleRunnable)
 	// 	GET/admin/user/list
 	// and we will map GET as first part of pathMapperNode tree
 	path = method + path
-
 	parts := strings.Split(path, "/")
 	for i, part := range parts {
-		if _, ok := data.children[part]; !ok {
+		// Is the current part a variable (eg ":abcd")
+		if variableName, ok := isVariablePart(part); ok {
+			if(data.variable.name != ""){
+				return;
+			}
 			var newpathMapperNode = New()
-			data.children[part] = newpathMapperNode
-		}
-		if i == len(parts)-1 {
-			data.children[part].function = f
+			data.variable.name = variableName
+			data.variable.child = newpathMapperNode
+			data = data.variable.child
+		} else {
+			if _, ok := data.children[part]; !ok {
+				var newpathMapperNode = New()
+				data.children[part] = newpathMapperNode
+			}
+			data = data.children[part]
 		}
 
-		data = data.children[part]
+		if i == len(parts)-1 {
+			data.function = f
+		}
 	}
 }
 
@@ -88,15 +116,47 @@ func (pm *pathMapperNode) GetControllers(path string) []SimpleRunnable {
 
 	parts := strings.Split(path, "/")
 	for _, part := range parts {
-		if _, ok := data.children[part]; !ok {
+		if _, ok := data.children[part]; ok {
+			data = data.children[part]
+			if f := data.function; f != nil {
+				functions = append(functions, f)
+			}
+		} else if data.variable.name != "" {
+			data = data.variable.child
+			if f := data.function; f != nil {
+				functions = append(functions, f)
+			}
+		} else {
 			return nil
 		}
-
-		if f := data.children[part].function; f != nil {
-			functions = append(functions, f)
-		}
-		data = data.children[part]
 	}
 
 	return functions
+}
+
+func ident(val int) string{
+	var i int
+	s := ""
+	for i = 0; i < val; i++{
+		s = s + "  ";
+	}
+	return s;
+}
+
+func showNode(pm *pathMapperNode, level int) string{
+	s := ""
+	for k, v := range pm.children {
+		s += ident(level) + k + "\n"
+		s += showNode(v, level + 1)
+	}
+	if(pm.variable.name != ""){
+		s += ident(level) + ":" + pm.variable.name + " (VAR)\n"
+		s += showNode(pm.variable.child, level + 1)
+	}
+	return s;
+}
+
+
+func (pm *pathMapperNode) String() string {
+        return fmt.Sprintf("%v", showNode(pm, 0))
 }
