@@ -12,6 +12,7 @@ func New() *exampleController {
 	return &c
 }
 
-func (c *exampleController) Run(w http.ResponseWriter, r *http.Request) {
+func (c *exampleController) Run(w http.ResponseWriter, r *http.Request) bool {
 	io.WriteString(w, "This is controller2!\n")
+	return true
 }

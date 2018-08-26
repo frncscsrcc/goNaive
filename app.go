@@ -1,8 +1,7 @@
 package main
 
 import (
-	"application/controllers/controller1"
-	"application/controllers/controller2"
+	"application/controllers"
 	"fmt"
 	"goNaive/multiplexer"
 	"net/http"
@@ -12,11 +11,7 @@ func main() {
 	// Create a naive multiplexer
 	naiveMux := multiplexer.NewMultiplexer()
 
-	c1 := controller1.New()
-	naiveMux.RegisterController("/test1", c1)
-
-	c2 := controller2.New()
-	naiveMux.RegisterController("/test2", c2)
+	controllers.RegisterControllers(naiveMux)
 
 	server := http.Server{
 		Addr:    "127.0.0.1:8080",

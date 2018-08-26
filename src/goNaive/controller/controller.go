@@ -5,5 +5,5 @@ import (
 )
 
 type Runnable interface {
-	Run(http.ResponseWriter, *http.Request)
+	Run(http.ResponseWriter, *http.Request) bool
 }

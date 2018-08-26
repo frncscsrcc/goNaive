@@ -3,27 +3,36 @@ package multiplexer
 import (
 	"fmt"
 	"goNaive/controller"
+	"goNaive/multiplexer/pathMapper"
 	"net/http"
 )
 
-type multiplexer struct {
-	pathsToController map[string]controller.Runnable
+type Multiplexer struct {
+	pathMapper *pathMapper.PathMapperNode
 }
 
-func NewMultiplexer() *multiplexer {
-	var m multiplexer
-	m.pathsToController = make(map[string]controller.Runnable)
+func NewMultiplexer() *Multiplexer {
+	var m Multiplexer
+	m.pathMapper = pathMapper.New()
 	return &m
 }
 
-func (m *multiplexer) RegisterController(path string, r controller.Runnable) {
-	m.pathsToController[path] = r
+func (m *Multiplexer) RegisterController(method string, path string, r controller.Runnable) {
+	m.pathMapper.Register(method, path, r)
 }
 
-func (m *multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Multipexing %v\n", r.RequestURI)
-	if controller, ok := m.pathsToController[r.RequestURI]; ok {
-		controller.Run(w, r)
+
+	controllers := m.pathMapper.GetControllers(r.Method + r.RequestURI)
+	if len(controllers) > 0 {
+		for _, controller := range controllers {
+			ok := controller.Run(w, r)
+			// If controller does not return true, stop the execution
+			if !ok {
+				break
+			}
+		}
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "404 - Not found")
